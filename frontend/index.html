@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS VPC Provisioner</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        h1 {
+            font-size: 3.5rem;
+        }
+
+        h1 span {
+            color: #5e5e5e;
+        }
+
+        .hero {
+            padding: 5rem 0;
+        }
+
+        body {
+            background-color: #131313;
+            padding-bottom: 3rem;
+        }
+
+        /* Center the form on the page */
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: start;
+            height: 100vh;
+            padding: 3rem 1rem;
+        }
+
+        /* Add a subtle shadow to the form */
+        .form-floating {
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            border-radius: 10px;
+            width: 600px;
+            background-color: #181818;
+            color: white;
+        }
+
+        .form-floating .text-muted {
+            display: block;
+            margin-top: 5px;
+            font-size: 80%;
+            margin-bottom: .5rem;
+        }
+
+        .form-floating .text-danger {
+            display: block;
+            text-align: right;
+        }
+
+        .form-floating code {
+            background-color: #f7f8fa;
+            border: 1px solid #dce0e6;
+            border-radius: 2px;
+            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-weight: 500;
+            font-size: 12px;
+            color: #C62A71;
+            text-align: center;
+            padding: 4px;
+            height: 16px;
+            margin: 0 4px;
+        }
+
+        .form-label {
+            font-weight: 500;
+        }
+
+        .form-floating .mb-3 {
+            margin-bottom: 2rem !important;
+        }
+
+        .checkbox {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox input {
+            display: inline;
+        }
+
+        .checkbox .form-label {
+            display: inline;
+            margin-bottom: 0;
+        }
+
+        #tag-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .text-muted {
+            color: #5e5e5e !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="alert alert-success alert-dismissible fade" role="alert">
+        Test message
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <header class="text-center text-white hero">
+        <h1>AWS VPC <span>Provisioner</span></h1>
+    </header>
+
+    <div class="container">
+        <form class="form-floating" method="post" id="vpc-form">
+            <div class="mb-3">
+                <label for="region" class="form-label">Region:</label>
+                <input placeholder="us-west-1" type="text" class="form-control" id="region" name="region">
+                <small class="text-muted">The region where the resources will be created.</small>
+                <small class="text-danger"></small>
+            </div>
+            <div class="mb-3">
+                <label for="name" class="form-label">Name:</label>
+                <input placeholder="VPCs" type="text" class="form-control" id="name" name="name">
+                <small class="text-muted">Name of the Resources</small>
+                <small class="text-danger"></small>
+            </div>
+            <div class="mb-3">
+                <label for="cidr_block" class="form-label">CIDR Block:</label>
+                <input placeholder="10.0.0.0/16" type="text" class="form-control" id="cidr_block" name="cidr_block">
+                <small class="text-muted">Base CIDR block</small>
+                <small class="text-danger"></small>
+            </div>
+            <div class="mb-3">
+                <label for="subnet_length" class="form-label">Subnet Length:</label>
+                <input placeholder="12" type="text" class="form-control" id="subnet_length" name="subnet_length">
+                <small class="text-muted">The new prefix length for the subnet</small>
+                <small class="text-danger"></small>
+            </div>
+            <div class="mb-3">
+                <label for="subnet_count" class="form-label">Subnet Count:</label>
+                <input placeholder="1" type="text" class="form-control" id="subnet_count" name="subnet_count">
+                <small class="text-muted">The number of subnets to create.</small>
+                <small class="text-danger"></small>
+            </div>
+            <div class="mb-3">
+                <label for="tags" class="form-label">Tags:</label>
+                <!-- Tags are meant to be increasable, meaning it can be added, it's a name and value input fields -->
+                <div id="tag-list"></div>
+                <button type="button" class="btn btn-sm btn-primary mt-2" id="add-tag">Add Tag</button>
+                <small class="text-muted">
+                    (Optional) A map of tags to assign to the resource. In order for a tag to be used, you need to
+                    provide both name and value.
+                </small>
+                <input type="hidden" name="tags">
+                <small class="text-danger"></small>
+            </div>
+            <button type="submit" class="btn btn-primary mx-auto d-block mt-5 px-5 py-2">
+                <span id="btn-loader" class="spinner-grow spinner-grow-sm d-none" role="status"
+                    aria-hidden="true"></span>
+                <span id="btn-text" style="display: inline-block;">Deploy VPC</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Bootstrap JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+
+        const base_url = "http://localhost:__BACKEND_SERVICE_PORT__"
+
+        // Check if jquery is loaded
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof jQuery == 'undefined') {
+                console.log('jQuery is not loaded');
+            } else {
+                console.log('jQuery is loaded');
+            }
+        });
+
+        let tagCount = 0;
+
+        // Add tag input fields
+        document.querySelector('#add-tag').addEventListener('click', function () {
+            tagCount++;
+
+            const inputGroup = document.createElement('div');
+            inputGroup.setAttribute('class', 'input-group');
+
+            const input = document.createElement('input');
+            input.setAttribute('type', 'text');
+            input.setAttribute('class', 'form-control');
+            input.setAttribute('placeholder', 'Name');
+            input.setAttribute('id', `tag${tagCount}-name`);
+            inputGroup.appendChild(input);
+
+            const input2 = document.createElement('input');
+            input2.setAttribute('type', 'text');
+            input2.setAttribute('class', 'form-control');
+            input2.setAttribute('placeholder', 'Value');
+            input2.setAttribute('id', `tag${tagCount}-value`);
+            inputGroup.appendChild(input2);
+
+            const tagList = document.getElementById('tag-list');
+            tagList.appendChild(inputGroup);
+        });
+
+
+        const form = document.getElementById('vpc-form');
+        const btnLoader = document.getElementById('btn-loader');
+        const btnText = document.getElementById('btn-text');
+
+        function setLoading() {
+            btnLoader.classList.remove('d-none');
+            btnText.textContent = 'Loading...';
+            btnText.style.marginLeft = '.4rem';
+        }
+        function removeLoading() {
+            btnLoader.classList.add('d-none');
+            btnText.textContent = 'Deploy VPC';
+            btnText.style.marginLeft = '0';
+        }
+
+        // Override the form submit event to create a JSON object of the tags inputs
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const tags = {};
+            for (let i = 1; i <= tagCount; i++) {
+                const name = document.getElementById(`tag${i}-name`).value;
+                const value = document.getElementById(`tag${i}-value`).value;
+
+                if (name && value) {
+                    tags[name] = value;
+                }
+            }
+
+            // Set the tags input value to the JSON object
+            document.querySelector('input[name="tags"]').value = JSON.stringify(tags);
+
+            // Submit the form using Ajax jquery
+            $.ajax({
+                type: "POST",
+                url: `${base_url}/api/v1/deploy/`,
+                data: $(form).serialize(),
+                beforeSend: function () {
+                    setLoading();
+                },
+                complete: function () {
+                    removeLoading();
+                },
+                success: function (response) {
+                    const alert = document.querySelector('.alert');
+                    alert.classList.add('show');
+                    const vpc_id = response.output.vpc_id;
+                    const subnet_ids = response.output.subnet_ids;
+                    alert.textContent = `VPC with ID: ${vpc_id} and Subnets with IDs: ${subnet_ids.join(', ')} has been created successfully.`;
+                },
+                error: function (error) {
+                    for (const key in error.responseJSON) {
+                        if (error.responseJSON.hasOwnProperty(key)) {
+                            const element = error.responseJSON[key];
+                            // Load error in ui
+                            const input = document.getElementById(key);
+                            const errorElement = input.parentElement.querySelector('.text-danger');
+                            errorElement.textContent = element[0];
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

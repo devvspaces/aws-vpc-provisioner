@@ -161,3 +161,8 @@ cython_debug/
 
 
 cdktf.out/
+
+input.json
+
+.terraform/
+terraform.tfstate

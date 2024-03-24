@@ -1,48 +1,30 @@
-# aws-vpc-provisioner
+# Docker Compose Example
 
-This application allows you to deploy new aws vpc using a user interface. It depends on CDKTF to deploy the infrastructure.
+Using docker to start and configure the applications.
 
-## Prerequisites
+## Requirements
 
-- CDKTF installed <https://developer.hashicorp.com/terraform/tutorials/cdktf/cdktf-install>
-- Python 3.7 or later
+- Docker
 
 ## Installation
 
-Create virtual environment
-
-```bash
-python3 -m venv venv
-```
-
-Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-Setup environment variables
+1. Git clone or download the zip repository.
+2. Update the .env file with your AWS credentials.
 
 ```bash
 cp env.example .env
 ```
 
-Then update the .env file with your AWS credentials.
-
-## Usage
-
-Run the application
+## Running the applications
 
 ```bash
-python manage.py runserver
+docker compose up --build --detach
 ```
 
-## How it works
+## How It Works
 
-The application uses CDKTF to deploy the infrastructure. The application creates a new directory in the `cdktf.out` folder and generates the terraform code. Then it runs `cdktf deploy` to deploy the infrastructure.
+The `docker-compose.yml` file defines the services that make up the application. In this case, we have two services: `backend` and `frontend`.
 
-Want to know more about CDKTF? Check the documentation <https://learn.hashicorp.com/tutorials/terraform/cdktf-intro>
+The `backend` service is built using the `Dockerfile` in the `backend` directory. The `frontend` service is built using the `Dockerfile` in the `frontend` directory.
 
-To deploy new VPCs a uuid4 is generated and used as the stack name. The stack name is used to create a new directory in the `cdktf.out` folder. This way, the application can deploy multiple VPCs at the same time.
-
-The `cdktf.out` directory is located in the `aws` directory. It's placed there to separate the terraform code from the application code.
+The `docker-compose.yml` file also defines the environment variables that are passed to the services. The `backend` service requires the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables to be set. These are set in the `.env` file available in the `backend` root directory.

@@ -1,0 +1,6 @@
+venv
+.gitignore
+db.sqlite3
+.terraform/
+.env
+terraform.tfstate

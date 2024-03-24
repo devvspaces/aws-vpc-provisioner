@@ -1,0 +1,21 @@
+version: '3.5'
+services:
+  backend:
+    build: ./backend
+    ports:
+    - "8001:8000"
+    container_name: vpc-terraform-backend
+    env_file:
+      - ./backend/.env
+
+  frontend:
+    depends_on:
+      - backend
+    build: ./frontend
+    ports:
+    - "8002:80"
+    environment:
+      - PORT=8001
+    working_dir: /usr/share/nginx/html
+    entrypoint: ./entrypoint.sh
+    container_name: vpc-terraform-frontend
