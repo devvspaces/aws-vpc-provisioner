@@ -45,7 +45,12 @@ class DeployView(GenericAPIView):
         # Run the terraform apply command
         print("Deploying...")
         cmd = ["terraform", "apply", "-auto-approve"]
-        chdir("tf.out")
+        
+        try:
+            chdir("tf.out")
+        except FileNotFoundError:
+            pass
+        
         try:
             print_gradually(cmd)
         except subprocess.CalledProcessError as e:
@@ -85,6 +90,8 @@ class DeployView(GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
+
+        print(data)
 
         # Deploy
         data = self.deploy(data)

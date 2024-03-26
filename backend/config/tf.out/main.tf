@@ -21,7 +21,7 @@ provider "aws" {
 # Create a VPC
 resource "aws_vpc" "main" {
   cidr_block = local.input_data.cidr_block
-  tags       = local.input_data.tags
+  tags       = merge(local.input_data.tags, {Name = "${local.input_data.name}"})
 }
 
 resource "aws_subnet" "myvpc" {
